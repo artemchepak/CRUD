@@ -1,14 +1,22 @@
 <?php
-try {
-    $pdo= new PDO('mysql:host=mysql;port=3306;dbname=shopping_list', 'admin', 'admin');
-} catch (PDOException $e) {
-    die($e->getMessage());
+
+require_once 'vendor/autoload.php';
+
+use App\Crud;
+
+$crud = new Crud();
+
+$products = $crud->read();
+
+if($crud->operation === 'delete'){
+    $crud->delete();
+} elseif ($crud->operation === 'create') {
+    $crud->create();
+} elseif ($crud->operation === 'edit') {
+    $crud->getEditValues();
+} elseif ($crud->operation === 'update') {
+    $crud->update();
 }
-
-$request = $pdo->prepare('SELECT * FROM products');
-$request->execute();
-$products = $request->fetchAll(PDO::FETCH_ASSOC);
-
 ?>
 
 
@@ -28,9 +36,39 @@ $products = $request->fetchAll(PDO::FETCH_ASSOC);
 <div class="container">
 
     <h1>Shopping List</h1>
+    <br>
 
-    <a href="create.php"  class="btn btn-success">Add new product</a>
+    <form action="" method="post">
+        <div class="row g-3">
+            <div class="col-sm">
+                <input type="text" class="form-control" name="name" value="<?php echo $crud->name?>">
+            </div>
+            <div class="col-sm">
+                <input type="text" class="form-control" name="description" value="<?php echo $crud->description?>">
+            </div>
+            <div class="col-sm-1">
+                <input type="text" class="form-control" name="amount" value="<?php echo $crud->amount?>">
+            </div>
+            <div class="col-sm">
+                <?php if ($crud->operation != 'edit'): ?>
+                <input type="hidden" name="operation" value="create">
+                <button type="submit" class="btn btn-success">Add new product</button>
+                <?php endif; ?>
 
+                <?php if ($crud->operation === 'edit'): ?>
+                    <input type="hidden" name="operation" value="update">
+                    <input type="hidden" name="id" value="<?php echo $crud->id?>">
+                    <button type="submit" class="btn btn-primary">Edit product</button>
+                <?php endif; ?>
+            </div>
+        </div>
+    </form>
+
+    <?php if ($crud->operation === 'edit'): ?>
+        <a href="index.php">undo editing</a>
+    <?php endif; ?>
+
+    <br>
     <table class="table table-striped">
         <thead>
         <tr>
@@ -43,19 +81,24 @@ $products = $request->fetchAll(PDO::FETCH_ASSOC);
         </thead>
         <tbody>
         <?php foreach ($products as $i => $product): ?>
-        <tr>
-            <th scope="row"><?php echo $i + 1 ?></th>
-            <td><?php echo $product['name'] ?></td>
-            <td><?php echo $product['description'] ?></td>
-            <td><?php echo $product['amount'] ?></td>
-            <td class="table-buttons">
-                <a href="update.php?id=<?php echo $product['id']; ?>" class="btn btn-outline-primary">Edit</a>
-                <form action="delete.php" method="post" style="display: inline-block">
-                    <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
-                    <button type="submit" class="btn btn-outline-danger">Delete</button>
-                </form>
-            </td>
-        </tr>
+            <tr>
+                <th scope="row"><?php echo $i + 1 ?></th>
+                <td><?php echo $product['name'] ?></td>
+                <td><?php echo $product['description'] ?></td>
+                <td><?php echo $product['amount'] ?></td>
+                <td class="table-buttons">
+                    <form action="" method="post" style="display: inline-block">
+                        <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
+                        <input type="hidden" name="operation" value="edit">
+                        <button type="submit" class="btn btn-outline-primary">Edit</button>
+                    </form>
+                    <form action="" method="post" style="display: inline-block">
+                        <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
+                        <input type="hidden" name="operation" value="delete">
+                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
         <?php endforeach; ?>
         </tbody>
     </table>
